@@ -1195,32 +1195,76 @@ fn bluetooth() -> Result<()> {
         ))?;
     }
 
-    // Same defaults as the macro at https://github.com/espressif/esp-idf/blob/8377a3fff1/components/bt/include/esp32/include/esp_bt.h#L163
-    // TODO This should eventually be nicely wrapped in esp_idf_svc.
-    let mut bt_controller_config = esp_idf_sys::esp_bt_controller_config_t {
-        controller_task_stack_size: esp_idf_sys::ESP_TASK_BT_CONTROLLER_STACK as u16,
-        controller_task_prio: esp_idf_sys::ESP_TASK_BT_CONTROLLER_PRIO as u8,
-        hci_uart_no: esp_idf_sys::BT_HCI_UART_NO_DEFAULT as u8,
-        hci_uart_baudrate: esp_idf_sys::BT_HCI_UART_BAUDRATE_DEFAULT,
-        scan_duplicate_mode: esp_idf_sys::SCAN_DUPLICATE_MODE as u8,
-        scan_duplicate_type: esp_idf_sys::SCAN_DUPLICATE_TYPE_VALUE as u8,
-        normal_adv_size: esp_idf_sys::NORMAL_SCAN_DUPLICATE_CACHE_SIZE as u16,
-        mesh_adv_size: esp_idf_sys::MESH_DUPLICATE_SCAN_CACHE_SIZE as u16,
-        send_adv_reserved_size: esp_idf_sys::SCAN_SEND_ADV_RESERVED_SIZE as u16,
-        controller_debug_flag: esp_idf_sys::CONTROLLER_ADV_LOST_DEBUG_BIT,
-        mode: esp_idf_sys::esp_bt_mode_t_ESP_BT_MODE_BLE as u8,
-        ble_max_conn: esp_idf_sys::CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF as u8,
-        bt_max_acl_conn: esp_idf_sys::CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF as u8,
-        bt_sco_datapath: esp_idf_sys::CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF as u8,
-        auto_latency: esp_idf_sys::BTDM_CTRL_AUTO_LATENCY_EFF != 0,
-        bt_legacy_auth_vs_evt: esp_idf_sys::BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF != 0,
-        bt_max_sync_conn: esp_idf_sys::CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF as u8,
-        ble_sca: esp_idf_sys::CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF as u8,
-        pcm_role: esp_idf_sys::CONFIG_BTDM_CTRL_PCM_ROLE_EFF as u8,
-        pcm_polar: esp_idf_sys::CONFIG_BTDM_CTRL_PCM_POLAR_EFF as u8,
-        hli: esp_idf_sys::BTDM_CTRL_HLI != 0,
-        magic: esp_idf_sys::ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,
-    };
+    #[cfg(not(esp32c3))]
+    fn bt_controller_config() -> esp_idf_sys::esp_bt_controller_config_t {
+        // Same defaults as the macro at https://github.com/espressif/esp-idf/blob/8377a3fff1/components/bt/include/esp32/include/esp_bt.h#L163
+        // TODO This should eventually be nicely wrapped in esp_idf_svc.
+        esp_idf_sys::esp_bt_controller_config_t {
+            controller_task_stack_size: esp_idf_sys::ESP_TASK_BT_CONTROLLER_STACK as u16,
+            controller_task_prio: esp_idf_sys::ESP_TASK_BT_CONTROLLER_PRIO as u8,
+            hci_uart_no: esp_idf_sys::BT_HCI_UART_NO_DEFAULT as u8,
+            hci_uart_baudrate: esp_idf_sys::BT_HCI_UART_BAUDRATE_DEFAULT,
+            scan_duplicate_mode: esp_idf_sys::SCAN_DUPLICATE_MODE as u8,
+            scan_duplicate_type: esp_idf_sys::SCAN_DUPLICATE_TYPE_VALUE as u8,
+            normal_adv_size: esp_idf_sys::NORMAL_SCAN_DUPLICATE_CACHE_SIZE as u16,
+            mesh_adv_size: esp_idf_sys::MESH_DUPLICATE_SCAN_CACHE_SIZE as u16,
+            send_adv_reserved_size: esp_idf_sys::SCAN_SEND_ADV_RESERVED_SIZE as u16,
+            controller_debug_flag: esp_idf_sys::CONTROLLER_ADV_LOST_DEBUG_BIT,
+            mode: esp_idf_sys::esp_bt_mode_t_ESP_BT_MODE_BLE as u8,
+            ble_max_conn: esp_idf_sys::CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF as u8,
+            bt_max_acl_conn: esp_idf_sys::CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF as u8,
+            bt_sco_datapath: esp_idf_sys::CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF as u8,
+            auto_latency: esp_idf_sys::BTDM_CTRL_AUTO_LATENCY_EFF != 0,
+            bt_legacy_auth_vs_evt: esp_idf_sys::BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF != 0,
+            bt_max_sync_conn: esp_idf_sys::CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF as u8,
+            ble_sca: esp_idf_sys::CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF as u8,
+            pcm_role: esp_idf_sys::CONFIG_BTDM_CTRL_PCM_ROLE_EFF as u8,
+            pcm_polar: esp_idf_sys::CONFIG_BTDM_CTRL_PCM_POLAR_EFF as u8,
+            hli: esp_idf_sys::BTDM_CTRL_HLI != 0,
+            magic: esp_idf_sys::ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,
+        };
+    }
+
+    #[cfg(esp32c3)]
+    fn bt_controller_config() -> esp_idf_sys::esp_bt_controller_config_t {
+        use esp_idf_sys::esp_bt_controller_config_t;
+
+        esp_bt_controller_config_t {
+            magic: esp_idf_sys::ESP_BT_CTRL_CONFIG_MAGIC_VAL,
+            version: esp_idf_sys::ESP_BT_CTRL_CONFIG_VERSION,
+            controller_task_stack_size: esp_idf_sys::ESP_TASK_BT_CONTROLLER_STACK as u16,
+            controller_task_prio: esp_idf_sys::ESP_TASK_BT_CONTROLLER_PRIO as u8,
+            controller_task_run_cpu: esp_idf_sys::CONFIG_BT_CTRL_PINNED_TO_CORE as u8,
+            bluetooth_mode: esp_idf_sys::CONFIG_BT_CTRL_MODE_EFF as u8,
+            ble_max_act: esp_idf_sys::CONFIG_BT_CTRL_BLE_MAX_ACT_EFF as u8,
+            sleep_mode: esp_idf_sys::CONFIG_BT_CTRL_SLEEP_MODE_EFF as u8,
+            sleep_clock: esp_idf_sys::CONFIG_BT_CTRL_SLEEP_CLOCK_EFF as u8,
+            ble_st_acl_tx_buf_nb: esp_idf_sys::CONFIG_BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB as u8,
+            ble_hw_cca_check: esp_idf_sys::CONFIG_BT_CTRL_HW_CCA_EFF as u8,
+            ble_adv_dup_filt_max: esp_idf_sys::CONFIG_BT_CTRL_ADV_DUP_FILT_MAX as u16,
+            ce_len_type: esp_idf_sys::CONFIG_BT_CTRL_CE_LENGTH_TYPE_EFF as u8,
+            hci_tl_type: esp_idf_sys::CONFIG_BT_CTRL_HCI_TL_EFF as u8,
+            hci_tl_funcs: std::ptr::null_mut(),
+            txant_dft: esp_idf_sys::CONFIG_BT_CTRL_TX_ANTENNA_INDEX_EFF as u8,
+            rxant_dft: esp_idf_sys::CONFIG_BT_CTRL_RX_ANTENNA_INDEX_EFF as u8,
+            txpwr_dft: esp_idf_sys::CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL_EFF as u8,
+            cfg_mask: esp_idf_sys::CFG_NASK,
+            scan_duplicate_mode: esp_idf_sys::SCAN_DUPLICATE_MODE as u8,
+            scan_duplicate_type: esp_idf_sys::SCAN_DUPLICATE_TYPE_VALUE as u8,
+            normal_adv_size: esp_idf_sys::NORMAL_SCAN_DUPLICATE_CACHE_SIZE as u16,
+            mesh_adv_size: esp_idf_sys::MESH_DUPLICATE_SCAN_CACHE_SIZE as u16,
+            coex_phy_coded_tx_rx_time_limit:
+                esp_idf_sys::CONFIG_BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF as u8,
+            hw_target_code: esp_idf_sys::BLE_HW_TARGET_CODE_ESP32C3_CHIP_ECO0 as u32,
+            slave_ce_len_min: esp_idf_sys::SLAVE_CE_LEN_MIN_DEFAULT as u8,
+            hw_recorrect_en: esp_idf_sys::AGC_RECORRECT_EN as u8,
+            cca_thresh: esp_idf_sys::CONFIG_BT_CTRL_HW_CCA_VAL as u8,
+            coex_param_en: false,
+            coex_use_hooks: false,
+        }
+    }
+
+    let mut bt_controller_config = bt_controller_config();
 
     // Same defaults as in https://github.com/espressif/esp-idf/blob/8377a3fff1927862ba5a17d0f9518e1a9e5fc8dd/examples/bluetooth/bluedroid/ble/gatt_client/main/gattc_demo.c#L68
     // TODO This should eventually be nicely wrapped in esp_idf_svc.
